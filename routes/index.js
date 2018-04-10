@@ -116,6 +116,18 @@ router.post('/dup', function(req, res) {
 });
 
 
+/*
+config/secret.js
+var crypto = require('crypto');
+
+const secretKey = 'secret ';
+const signature = crypto.createHmac('sha256', 'secretKey')
+    .update(encodedHeader + '.' + encodedPayload)
+    .digest('base64').replace('=', '');
+
+exports.signature;
+*/
+
 router.post('/login', function(req, res) {
     if (!req.body.mail || !req.body.passwd) {
         console.log("client Error" + '\n메일 : ' + req.body.mail + '\n비번 : ' + req.body.passwd);
@@ -133,7 +145,8 @@ router.post('/login', function(req, res) {
                 });
                 connection.release();
             } else {
-                connection.query('select USER_NICKNAME, USER_PASS from USER where main =?', req.body.mail, function(error, result) {
+                console.log(passwd);
+                connection.query('select USER_NICKNAME, USER_PASS from USER where USER_MAIL =?', req.body.mail, function(error, result) {
                     if (error) {
                         console.log(error);
                         res.status(503).json({ msg: '3' });
@@ -144,9 +157,13 @@ router.post('/login', function(req, res) {
                             });
                             connection.release();
                         } else {
+                            console.log(result[0]);
+                            let nick = result[0].USER_NICKNAME;
                             bcrypt.compare(passwd, result[0].USER_PASS, function(error, result) {
+                                console.log(result);
+                                console.log(passwd);
                                 if (error) {
-                                    console.log('bcrypt. compare() errer : ', error.message);
+                                    console.log('bcrypt. compare() errer : ', error);
                                     res.status(503).json({ msg: '5' });
                                 } else {
                                     if (result) {
@@ -157,14 +174,14 @@ router.post('/login', function(req, res) {
                                         };
 
                                         let payload = {
-                                            user_email: email
+                                            user_mailL: mail
                                         };
 
-                                        let token = jwt.sign(payload, req.app.get('jwt-secret'), option);
+                                        let token = jwt.sign(payload, secret, option);
                                         console.log(token);
                                         res.status(200).json({
                                             msg: '7',
-                                            nickname: result[0].nickname,
+                                            nickname: nick,
                                             token: token
                                         });
                                         connection.release();
