@@ -7,21 +7,6 @@ const check = require('../js/check.js');
 const mysql = require('mysql');
 
 
-// var checkDUP = function(flag) {
-//     console.log('내가 받은' + flag);
-
-//     // let flag = flag;
-//     let query;
-
-//     if (flag == 1) {
-//         query = 'select USER_MAIL from USER where USER_MAIL = ?';
-//         return query;
-//     } else {
-//         query = 'select USER_MAIL from USER where USER_NICKNAME = ?';
-//         return query;
-//     }
-// }
-
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -131,7 +116,7 @@ router.post('/dup', function(req, res) {
 
 
 router.post('/login', function(req, res) {
-
+    if ()
 });
 
 router.post('/logout', function(req, res) {
