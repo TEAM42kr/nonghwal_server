@@ -5,28 +5,14 @@ const pool = require('../config/db_pool');
 const bcrypt = require('bcrypt-nodejs');
 const check = require('../js/check.js');
 const mysql = require('mysql');
+const jwt = require('jsonwebtoken');
 
 
-// var checkDUP = function(flag) {
-//     console.log('내가 받은' + flag);
-
-//     // let flag = flag;
-//     let query;
-
-//     if (flag == 1) {
-//         query = 'select USER_MAIL from USER where USER_MAIL = ?';
-//         return query;
-//     } else {
-//         query = 'select USER_MAIL from USER where USER_NICKNAME = ?';
-//         return query;
-//     }
-// }
-
-
-/* GET users listing. */
+/* GET home page. */
 router.get('/', function(req, res, next) {
-    res.send('respond with a resource');
+    res.render('index', { title: 'Express' });
 });
+
 
 /* 
 회원가입
@@ -130,8 +116,91 @@ router.post('/dup', function(req, res) {
 });
 
 
-router.post('/login', function(req, res) {
+/*
+config/secret.js
+var crypto = require('crypto');
 
+const secretKey = 'secret ';
+const signature = crypto.createHmac('sha256', 'secretKey')
+    .update(encodedHeader + '.' + encodedPayload)
+    .digest('base64').replace('=', '');
+
+exports.signature;
+*/
+
+router.post('/login', function(req, res) {
+    if (!req.body.mail || !req.body.passwd) {
+        console.log("client Error" + '\n메일 : ' + req.body.mail + '\n비번 : ' + req.body.passwd);
+        res.status(200).json({
+            msg: '1'
+        });
+    } else {
+        let mail = req.body.mail;
+        let passwd = req.body.passwd;
+        pool.getConnection(function(error, connection) {
+            if (error) {
+                console.log("getConnection Error" + error);
+                res.status(503).json({
+                    msg: '2'
+                });
+                connection.release();
+            } else {
+                console.log(passwd);
+                connection.query('select USER_NICKNAME, USER_PASS from USER where USER_MAIL =?', req.body.mail, function(error, result) {
+                    if (error) {
+                        console.log(error);
+                        res.status(503).json({ msg: '3' });
+                    } else {
+                        if (result.length == 0) {
+                            res.status(200).send({
+                                msg: '4'
+                            });
+                            connection.release();
+                        } else {
+                            console.log(result[0]);
+                            let nick = result[0].USER_NICKNAME;
+                            bcrypt.compare(passwd, result[0].USER_PASS, function(error, result) {
+                                console.log(result);
+                                console.log(passwd);
+                                if (error) {
+                                    console.log('bcrypt. compare() errer : ', error);
+                                    res.status(503).json({ msg: '5' });
+                                } else {
+                                    if (result) {
+                                        const secret = req.app.get('jwt-secret');
+                                        let option = {
+                                            algorithm: 'HS256',
+                                            expiresIn: 3600 * 24 * 10 //토큰의 유효기간 10일
+                                        };
+
+                                        let payload = {
+                                            user_mailL: mail
+                                        };
+
+                                        let token = jwt.sign(payload, secret, option);
+                                        console.log(token);
+                                        res.status(200).json({
+                                            msg: '7',
+                                            nickname: nick,
+                                            token: token
+                                        });
+                                        connection.release();
+                                    } else {
+                                        console.log(error);
+                                        console.log('wrong password');
+                                        connection.release();
+                                        res.status(200).send({
+                                            msg: '6'
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    }
 });
 
 router.post('/logout', function(req, res) {
