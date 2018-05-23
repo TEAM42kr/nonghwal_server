@@ -157,11 +157,8 @@ router.post('/login', function(req, res) {
                             });
                             connection.release();
                         } else {
-                            console.log(result[0]);
                             let nick = result[0].USER_NICKNAME;
                             bcrypt.compare(passwd, result[0].USER_PASS, function(error, result) {
-                                console.log(result);
-                                console.log(passwd);
                                 if (error) {
                                     console.log('bcrypt. compare() errer : ', error);
                                     res.status(503).json({ msg: '5' });
@@ -174,7 +171,7 @@ router.post('/login', function(req, res) {
                                         };
 
                                         let payload = {
-                                            user_mailL: mail
+                                            user_mail: mail
                                         };
 
                                         let token = jwt.sign(payload, secret, option);
@@ -186,8 +183,7 @@ router.post('/login', function(req, res) {
                                         });
                                         connection.release();
                                     } else {
-                                        console.log(error);
-                                        console.log('wrong password');
+                                        console.log('wrong password' + error);
                                         connection.release();
                                         res.status(200).send({
                                             msg: '6'
